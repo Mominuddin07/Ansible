@@ -1,0 +1,102 @@
+---
+- name: Deploy webserver (nginx on Ubuntu/Debian)
+  hosts: web
+  become: true
+  gather_facts: true
+  tags: [deploy]
+
+  vars:
+    nginx_site_available_dir: "/etc/nginx/sites-available"
+    nginx_site_enabled_dir: "/etc/nginx/sites-enabled"
+
+  tasks:
+    - name: Ensure site root exists
+      file:
+        path: "{{ site_root }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Create nginx server block
+      copy:
+        dest: "{{ nginx_site_available_dir }}/sjsu"
+        content: |
+          server {
+              listen {{ web_port }};
+              server_name {{ server_name }};
+              root {{ site_root }};
+              index index.html;
+          }
+      notify: Reload nginx
+
+    - name: Enable site
+      file:
+        src: "{{ nginx_site_available_dir }}/sjsu"
+        dest: "{{ nginx_site_enabled_dir }}/sjsu"
+        state: link
+        force: true
+
+    - name: Remove default site if present
+      file:
+        path: "{{ nginx_site_enabled_dir }}/default"
+        state: absent
+      ignore_errors: true
+
+    - name: Render index.html from template
+      template:
+        src: "templates/index.html.j2"
+        dest: "{{ site_root }}/index.html"
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Ensure nginx service is running
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Reload nginx
+      service:
+        name: nginx
+        state: restarted
+
+- name: Undeploy webserver (remove configs + stop service)
+  hosts: web
+  become: true
+  gather_facts: true
+  tags: [undeploy]
+
+  tasks:
+    - name: Stop and disable nginx
+      service:
+        name: nginx
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Remove nginx site config
+      file:
+        path: "/etc/nginx/sites-available/sjsu"
+        state: absent
+      ignore_errors: true
+
+    - name: Remove nginx site symlink
+      file:
+        path: "/etc/nginx/sites-enabled/sjsu"
+        state: absent
+      ignore_errors: true
+
+    - name: Remove site root
+      file:
+        path: "{{ site_root }}"
+        state: absent
+      ignore_errors: true
