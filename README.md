@@ -1,4 +1,4 @@
-# 🖥️ SJSU Ansible Assignment
+# 🖥️ Ansible 
 
 This project demonstrates configuring two AWS EC2 instances (VM1 & VM2) and deploying a webserver on each using **Ansible**.  
 Each server listens on **port 8080** and serves a web page with:
@@ -99,18 +99,7 @@ curl -I http://52.53.227.102:8080
 ```
 You should see a **connection refused** or **404** after undeploy.
 
----
 
-## 📸 Screenshots to Include in Report
-
-1. EC2 console showing **VM1** and **VM2** running (with Public IPs).  
-2. Security Group inbound rules (ports 22 + 8080 open).  
-3. Terminal: `ansible --version`.  
-4. Terminal: `ansible -i inventory.ini web -m ping` with both `SUCCESS`.  
-5. Deployment play recap (`ansible-playbook --tags deploy`).  
-6. Browser page for VM1 (Hello World from SJSU-1).  
-7. Browser page for VM2 (Hello World from SJSU-2).  
-8. Undeployment play recap.  
 
 ---
 
